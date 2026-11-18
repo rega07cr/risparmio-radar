@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Risparmio Radar — Offerte tech, sconti verificati, dropshipping e mining</title>
+<meta name="description" content="Radar delle offerte tech con punteggio di convenienza reale, sconti ufficiali verificati, analisi dropshipping con margini e simulatore di mining onesto.">
+<meta name="theme-color" content="#07110f">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='9' fill='%2307110f'/%3E%3Cpath d='M7 19a9 9 0 0 1 18 0' stroke='%2367e8b6' stroke-width='2.4' fill='none' stroke-linecap='round'/%3E%3Cpath d='M16 19l5-4' stroke='%23d8ff6b' stroke-width='2.4' stroke-linecap='round'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/styles.css">
+</head>
+<body>
+
+<a class="skip" href="#main">Salta al contenuto</a>
+
+<header class="topbar">
+  <a class="brand" href="#offerte" aria-label="Risparmio Radar">
+    <span class="brand-mark" aria-hidden="true">
+      <svg viewBox="0 0 32 32"><path d="M6 21a10 10 0 0 1 20 0"/><path d="M16 21l6.5-5"/><circle cx="16" cy="21" r="1.6"/></svg>
+    </span>
+    <span class="brand-text">
+      <strong>Risparmio<span>Radar</span></strong>
+      <small>spend less · earn smart</small>
+    </span>
+  </a>
+
+  <nav class="tabs" aria-label="Sezioni">
+    <button class="tab is-active" data-tab="offerte">Offerte</button>
+    <button class="tab" data-tab="sconti">Sconti verificati</button>
+    <button class="tab" data-tab="dropshipping">Dropshipping</button>
+    <button class="tab" data-tab="mining">Mining</button>
+    <button class="tab" data-tab="idee">Idee</button>
+  </nav>
+
+  <div class="topbar-meta">
+    <span class="pill pill-live"><i></i> dati locali</span>
+  </div>
+</header>
+
+<main id="main">
+
+  <!-- ===================== OFFERTE ===================== -->
+  <section class="panel is-active" id="panel-offerte">
+    <div class="hero">
+      <div class="hero-copy">
+        <span class="eyebrow">Radar offerte tech · Italia</span>
+        <h1>Il prezzo più basso non è sempre <span class="grad">l'affare migliore</span>.</h1>
+        <p class="lead">
+          Ogni offerta viene pesata su sconto reale rispetto alla media a 90 giorni,
+          posizione nella forbice dei prezzi, affidabilità del venditore e recensioni.
+          Diffida dei listini gonfiati: qui vengono segnalati.
+        </p>
+        <div class="hero-actions">
+          <button class="btn btn-primary" data-jump="deals-grid">Guarda le offerte ordinate <span aria-hidden="true">→</span></button>
+          <button class="btn btn-ghost" data-tab-link="sconti">Sconti ufficiali</button>
+        </div>
+      </div>
+      <aside class="hero-stats" id="hero-stats" aria-label="Statistiche del catalogo"></aside>
+    </div>
+
+    <div class="notice notice-warn" role="note">
+      <strong>Trasparenza sui dati.</strong>
+      I prezzi sono un'istantanea indicativa (18/11/2026) e non vengono aggiornati in tempo reale:
+      l'app calcola la convenienza su quei numeri e i pulsanti aprono una ricerca prezzi aggiornata.
+      Per dati live servono le API dei merchant (Amazon PA-API, feed affiliati) con chiavi tue.
+    </div>
+
+    <div class="toolbar">
+      <div class="field field-search">
+        <label for="deal-search">Cerca prodotto</label>
+        <input id="deal-search" type="search" placeholder="es. cuffie, SSD, OLED, drone…" autocomplete="off">
+      </div>
+      <div class="field">
+        <label for="deal-merchant">Negozio</label>
+        <select id="deal-merchant"><option value="">Tutti</option></select>
+      </div>
+      <div class="field">
+        <label for="deal-sort">Ordina per</label>
+        <select id="deal-sort">
+          <option value="score">Convenienza (punteggio)</option>
+          <option value="discount">Sconto reale %</option>
+          <option value="price-asc">Prezzo crescente</option>
+          <option value="rating">Recensioni / voto</option>
+        </select>
+      </div>
+      <div class="field field-range">
+        <label for="deal-budget">Budget max: <output id="budget-out">1500 €</output></label>
+        <input id="deal-budget" type="range" min="50" max="1500" step="50" value="1500">
+      </div>
+    </div>
+
+    <div class="chips" id="deal-categories" role="group" aria-label="Filtra per categoria"></div>
+
+    <div class="result-bar">
+      <p id="deal-count">—</p>
+      <label class="switch">
+        <input type="checkbox" id="deal-top-only">
+        <span>Solo affari top (≥ 80)</span>
+      </label>
+    </div>
+
+    <div class="grid" id="deals-grid"></div>
+    <p class="empty" id="deals-empty" hidden>Nessuna offerta con questi filtri. Allarga il budget o togli la categoria.</p>
+  </section>
+
+  <!-- ===================== SCONTI ===================== -->
+  <section class="panel" id="panel-sconti">
+    <div class="section-head">
+      <span class="eyebrow">Sconti realmente funzionanti</span>
+      <h2>Nessun codice inventato.</h2>
+      <p class="lead">
+        I codici sconto invecchiano in poche ore e nessuno può verificarli senza provarli al checkout.
+        Qui trovi due cose separate: <strong>promozioni ufficiali</strong> dei negozi (pagina del negozio, condizioni in chiaro)
+        e <strong>i tuoi codici testati</strong>, con data dell'ultimo test e percentuale di successo reale.
+      </p>
+    </div>
+
+    <div class="split">
+      <div>
+        <div class="toolbar toolbar-tight">
+          <div class="field">
+            <label for="offer-kind">Tipo di sconto</label>
+            <select id="offer-kind">
+              <option value="">Tutti</option>
+              <option value="outlet">Outlet / fine serie</option>
+              <option value="ricondizionato">Ricondizionato</option>
+              <option value="coupon-ufficiale">Coupon ufficiale</option>
+              <option value="studenti">Studenti / aziende</option>
+              <option value="usato">Second-hand garantito</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="offer-search">Cerca</label>
+            <input id="offer-search" type="search" placeholder="negozio o categoria">
+          </div>
+        </div>
+        <div class="stack" id="offers-list"></div>
+      </div>
+
+      <aside class="side-card">
+        <h3>Stack del risparmio</h3>
+        <p class="muted">L'ordine giusto per sommare gli sconti senza perdere garanzia:</p>
+        <ol class="steps">
+          <li><b>Controlla lo storico</b> (Keepa / camelcamelcamel): se il prezzo attuale è vicino al minimo storico, parti da qui.</li>
+          <li><b>Applica coupon del negozio</b> e, se previsto, il codice benvenuto.</li>
+          <li><b>Aggiungi cashback o punti</b> del programma del negozio o della carta.</li>
+          <li><b>Valuta il trade-in</b> del vecchio dispositivo: spesso vale più dello sconto.</li>
+          <li><b>Verifica reso e garanzia</b>: un outlet senza reso a 30 giorni non è un affare.</li>
+        </ol>
+        <p class="fine">Nessun link è affiliato. Nessuna percentuale è garantita: cambia in base a stock, città e account.</p>
+      </aside>
+    </div>
+
+    <div class="section-head section-head-tight">
+      <span class="eyebrow">I tuoi codici</span>
+      <h2>Testati da te, non promessi da altri</h2>
+      <p class="lead">Aggiungi un codice solo dopo averlo usato davvero. Vota quelli che funzionano: i codici con più fallimenti scendono in fondo da soli. Tutto resta su questo dispositivo.</p>
+    </div>
+
+    <div class="split">
+      <div>
+        <form class="card form" id="code-form" novalidate>
+          <div class="form-row">
+            <div class="field">
+              <label for="code-merchant">Negozio</label>
+              <input id="code-merchant" name="merchant" required placeholder="es. Unieuro">
+            </div>
+            <div class="field">
+              <label for="code-value">Codice</label>
+              <input id="code-value" name="code" required placeholder="es. BENVENUTO10" spellcheck="false">
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="field">
+              <label for="code-benefit">Cosa fa</label>
+              <input id="code-benefit" name="benefit" required placeholder="es. 10% su accessori">
+            </div>
+            <div class="field">
+              <label for="code-expiry">Scadenza (facoltativa)</label>
+              <input id="code-expiry" name="expiry" type="date">
+            </div>
+          </div>
+          <p class="form-error" id="code-error" role="alert" hidden></p>
+          <button class="btn btn-primary" type="submit">Aggiungi ai codici testati</button>
+        </form>
+      </div>
+      <div class="stack" id="codes-list"></div>
+    </div>
+  </section>
+
+  <!-- ===================== DROPSHIPPING ===================== -->
+  <section class="panel" id="panel-dropshipping">
+    <div class="section-head">
+      <span class="eyebrow">Dropshipping lab</span>
+      <h2>Trova il prodotto, costruisci il margine, evita di bruciare budget in ads.</h2>
+      <p class="lead">
+        Prodotti ordinati per <strong>opportunità</strong> (domanda stimata, trend, concorrenza, margine potenziale).
+        Scegli un prodotto, imposta il margine che vuoi tenere e l'app calcola prezzo di vendita, profitto per unità
+        e ROAS di pareggio — cioè quanto puoi spendere in pubblicità prima di rimetterci.
+      </p>
+    </div>
+
+    <div class="notice notice-info">
+      <strong>Come funziona il denaro vero.</strong>
+      Questa app prepara catalogo, prezzi, margini e listing. Per incassare con carta serve un account di incasso
+      (Stripe o Shopify Payments): verifica identità, IBAN e Partita IVA. Nessun dato di carta va mai inserito qui:
+      si usa la pagina sicura del provider.
+    </div>
+
+    <div class="toolbar">
+      <div class="field">
+        <label for="product-category">Categoria</label>
+        <select id="product-category"><option value="">Tutte</option></select>
+      </div>
+      <div class="field">
+        <label for="product-competition">Concorrenza</label>
+        <select id="product-competition">
+          <option value="">Tutte</option>
+          <option value="Bassa">Bassa</option>
+          <option value="Media">Media</option>
+          <option value="Alta">Alta</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="product-sort">Ordina per</label>
+        <select id="product-sort">
+          <option value="opportunity">Opportunità</option>
+          <option value="demand">Domanda</option>
+          <option value="trend">Trend</option>
+          <option value="margin">Margine potenziale</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="split split-wide">
+      <div>
+        <div class="table-wrap">
+          <table class="table" id="products-table">
+            <thead>
+              <tr>
+                <th>Prodotto</th>
+                <th>Costo</th>
+                <th>Mercato</th>
+                <th>Domanda</th>
+                <th>Trend</th>
+                <th>Concorrenza</th>
+                <th>Opportunità</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+      <aside class="side-card" id="product-detail"></aside>
+    </div>
+
+    <div id="listing-area"></div>
+
+    <div class="section-head section-head-tight">
+      <span class="eyebrow">Incassi</span>
+      <h2>Collegare la carta (senza rischi)</h2>
+      <p class="lead">La carta di credito non si collega a un sito statico: si collega al processore di pagamento. Ecco il percorso corretto, con i requisiti reali.</p>
+    </div>
+
+    <div class="split">
+      <div class="card">
+        <h3>Checklist prima del primo euro</h3>
+        <ul class="checklist" id="payment-checklist">
+          <li><label><input type="checkbox" data-check="piva"> Partita IVA o regime fiscale adeguato (in Italia serve per vendere in modo continuativo)</label></li>
+          <li><label><input type="checkbox" data-check="provider"> Account Stripe (o Shopify Payments) creato</label></li>
+          <li><label><input type="checkbox" data-check="kyc"> Identità e IBAN verificati dal provider</label></li>
+          <li><label><input type="checkbox" data-check="policy"> Pagine resi, spedizioni e privacy pubblicate</label></li>
+          <li><label><input type="checkbox" data-check="test"> Un ordine di test completato in modalità test</label></li>
+          <li><label><input type="checkbox" data-check="fornitore"> Fornitore testato: tempi reali e qualità campione</label></li>
+        </ul>
+        <p class="fine">0/6 completati: i pagamenti reali restano spenti finché la checklist non è completa.</p>
+      </div>
+      <div class="card">
+        <h3>Due strade, stessa logica</h3>
+        <div class="path">
+          <div><span class="tag">Semplice</span><b>Shopify</b><p>Store pronto, pagamenti integrati, ~1 €/mese in prova poi ~39 €/mese. Ti occupi tu di prodotti e ads.</p><a class="link" href="https://www.shopify.com/it" target="_blank" rel="noopener noreferrer">shopify.com →</a></div>
+          <div><span class="tag">Controllo</span><b>Stripe + sito tuo</b><p>Checkout ospitato da Stripe, commissione ~1,5% + 0,25 € per carta EU. Serve un backend per creare la sessione di pagamento.</p><a class="link" href="https://dashboard.stripe.com/register" target="_blank" rel="noopener noreferrer">dashboard.stripe.com →</a></div>
+        </div>
+        <p class="fine">Le commissioni indicate sono di riferimento e cambiano per paese, carta e volume: verifica il listino ufficiale prima di fare prezzi.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== MINING ===================== -->
+  <section class="panel" id="panel-mining">
+    <div class="section-head">
+      <span class="eyebrow">Mining lab · simulazione trasparente</span>
+      <h2>Quanto rende davvero il mining? Te lo dice il calcolo, non una promessa.</h2>
+      <p class="lead">
+        Misura l'hashrate reale di questo browser, confrontalo con la rete delle monete dalla più conosciuta alla più di nicchia,
+        e vedi ricavi, costo elettrico e tempo per raggiungere il payout minimo. Il conto temporaneo e il prelievo sono
+        <strong>simulati</strong>: nessun euro reale viene generato o trasferito.
+      </p>
+    </div>
+
+    <div class="notice notice-danger">
+      <strong>Perché è una simulazione.</strong>
+      Il mining da browser non è redditizio: con l'hashrate di una pagina web servono anni per pochi centesimi, e i siti che
+      promettono “mining veloce con prelievo immediato” sono quasi sempre truffe o malware. Per incassare davvero servono
+      hardware tuo (o hashpower affittato), un pool con payout al tuo wallet e un exchange con KYC. Questa sezione calcola i
+      numeri veri e simula il flusso, senza mai fingersi una banca.
+    </div>
+
+    <div class="split split-wide">
+      <div class="card">
+        <div class="card-head">
+          <h3>1 · La tua potenza di calcolo</h3>
+          <span class="tag" id="hash-source">proxy browser</span>
+        </div>
+        <div class="hash-row">
+          <div class="field">
+            <label for="hash-value">Hashrate</label>
+            <input id="hash-value" type="number" min="0" step="any" value="20">
+          </div>
+          <div class="field">
+            <label for="hash-unit">Unità</label>
+            <select id="hash-unit">
+              <option value="1">H/s</option>
+              <option value="1000" selected>kH/s</option>
+              <option value="1000000">MH/s</option>
+              <option value="1e9">GH/s</option>
+              <option value="1e12">TH/s</option>
+              <option value="1e15">PH/s</option>
+            </select>
+          </div>
+          <button class="btn btn-ghost" id="measure-btn" type="button">Misura questo browser</button>
+        </div>
+        <p class="fine" id="measure-note">La misura usa SHA-256 via WebCrypto come proxy: non è l'hashrate dell'algoritmo della moneta scelta. Se hai un rig o un ASIC, inserisci il valore del produttore o del pool.</p>
+
+        <div class="form-row">
+          <div class="field">
+            <label for="power-watts">Consumo (W)</label>
+            <input id="power-watts" type="number" min="0" step="1" value="15">
+          </div>
+          <div class="field">
+            <label for="power-price">Elettricità (€/kWh)</label>
+            <input id="power-price" type="number" min="0" step="0.01" value="0.28">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="field">
+            <label for="mining-coin">Moneta</label>
+            <select id="mining-coin"></select>
+          </div>
+          <div class="field">
+            <label for="demo-speed">Acceleratore demo</label>
+            <select id="demo-speed">
+              <option value="1">1× (tempo reale)</option>
+              <option value="60">60× (1 min = 1 ora)</option>
+              <option value="3600">3.600× (1 s = 1 ora)</option>
+              <option value="86400">86.400× (1 s = 1 giorno)</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="price-row">
+          <button class="btn btn-ghost btn-sm" id="refresh-prices" type="button">Aggiorna prezzi (CoinGecko)</button>
+          <span class="fine" id="price-source">prezzi statici di riferimento</span>
+        </div>
+      </div>
+
+      <aside class="card account-card" id="mining-account"></aside>
+    </div>
+
+    <div class="section-head section-head-tight">
+      <span class="eyebrow">Confronto monete</span>
+      <h2>Dalla più conosciuta alla più di nicchia</h2>
+      <p class="lead">Ricavo stimato con il tuo hashrate, costo elettrico e utile netto giornaliero. Le monete ASIC-only con hashrate da browser sono fuori portata: il numero lo dimostra.</p>
+    </div>
+
+    <div class="table-wrap">
+      <table class="table" id="coins-table">
+        <thead>
+          <tr>
+            <th>Moneta</th><th>Algoritmo</th><th>Hashrate rete</th><th>Prezzo €</th>
+            <th>Ricavo / giorno</th><th>Elettricità</th><th>Netto / giorno</th><th>Payout minimo</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+
+    <div class="section-head section-head-tight">
+      <span class="eyebrow">Conto temporaneo</span>
+      <h2>Dal mining al prelievo: il flusso completo</h2>
+      <p class="lead">Avvia la simulazione, accumula sul conto temporaneo e prova il prelievo. Ogni passaggio è registrato in locale; nessun dato viene inviato a un server.</p>
+    </div>
+
+    <div class="mining-console" id="mining-console"></div>
+
+    <div class="split">
+      <div class="card">
+        <h3>Il percorso reale per incassare</h3>
+        <ol class="steps">
+          <li><b>Scegli hardware e moneta</b> in base al costo dell'energia, non al prezzo del giorno.</li>
+          <li><b>Entra in un pool</b> (es. supportXMR, 2Miners) e configura il payout minimo al tuo wallet.</li>
+          <li><b>Apri un exchange con KYC</b> e genera un indirizzo di deposito per quella moneta.</li>
+          <li><b>Minera fino al payout</b>, poi sposta sul exchange e converti in euro.</li>
+          <li><b>Dichiara il reddito</b>: in Italia il mining è tassato come reddito diverso/attività; conserva i registri.</li>
+        </ol>
+      </div>
+      <div class="card">
+        <h3>Conti che nessuno ti mostra</h3>
+        <p class="muted">Con 100 MH/s su Monero, pool fee 1%, prezzo 290 €:</p>
+        <div class="math-box" id="math-box"></div>
+        <p class="fine">Il mining è una scommessa su prezzo e difficoltà: se il prezzo scende o la difficoltà sale, il rientro si allunga. Nessun payout è garantito.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== IDEE ===================== -->
+  <section class="panel" id="panel-idee">
+    <div class="section-head">
+      <span class="eyebrow">Altri modi per fare soldi</span>
+      <h2>Idee ordinate per capitale, tempo e rischio</h2>
+      <p class="lead">
+        Nessuna rendita garantita, nessun “metodo segreto”. Solo attività con una domanda reale, il primo passo concreto
+        e il link alla piattaforma giusta. Filtra per quanto puoi investire e per quanto tempo hai.
+      </p>
+    </div>
+
+    <div class="toolbar">
+      <div class="field">
+        <label for="idea-capital">Capitale di partenza</label>
+        <select id="idea-capital">
+          <option value="">Qualsiasi</option>
+          <option value="zero">0 €</option>
+          <option value="low">fino a 100 €</option>
+          <option value="mid">100–1.000 €</option>
+          <option value="high">oltre 1.000 €</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="idea-effort">Impegno</label>
+        <select id="idea-effort">
+          <option value="">Qualsiasi</option>
+          <option value="Basso">Basso</option>
+          <option value="Medio">Medio</option>
+          <option value="Alto">Alto</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="idea-category">Categoria</label>
+        <select id="idea-category"><option value="">Tutte</option></select>
+      </div>
+    </div>
+
+    <div class="grid grid-ideas" id="ideas-grid"></div>
+
+    <div class="card redflags">
+      <h3>Bandiere rosse: se vedi una di queste, chiudi la pagina</h3>
+      <ul class="ticks ticks-bad">
+        <li>Rendimenti garantiti (“+2% al giorno”) o payout immediati senza hardware.</li>
+        <li>Ti chiedono un deposito per “sbloccare” un prelievo.</li>
+        <li>“Dropshipping automatico” dove paghi solo la formazione e il resto è già fatto.</li>
+        <li>Mining cloud senza nome del data center, senza contratto e senza prova di hashrate.</li>
+        <li>Commissioni nascoste, referral obbligatori, pressione a reclutare altre persone.</li>
+        <li>Chi ti vende il metodo guadagna dal metodo, non dal business che ti propone.</li>
+      </ul>
+      <p class="fine">Regola pratica: se il guadagno dipende dal numero di persone che assumi, è un schema piramidale. Se dipende dal lavoro o dal capitale, è un business.</p>
+    </div>
+  </section>
+</main>
+
+<footer class="footer">
+  <div class="footer-inner">
+    <div>
+      <strong>Risparmio Radar</strong>
+      <p>Webapp statica e offline-first. I dati restano nel browser; nessun tracciamento, nessuna affiliazione.</p>
+    </div>
+    <div class="footer-links">
+      <span>Sezioni</span>
+      <button data-tab-link="offerte">Offerte</button>
+      <button data-tab-link="sconti">Sconti</button>
+      <button data-tab-link="dropshipping">Dropshipping</button>
+      <button data-tab-link="mining">Mining</button>
+      <button data-tab-link="idee">Idee</button>
+    </div>
+    <div class="footer-links">
+      <span>Fonti utili</span>
+      <a href="https://keepa.com" target="_blank" rel="noopener noreferrer">Storico prezzi Keepa</a>
+      <a href="https://it.camelcamelcamel.com" target="_blank" rel="noopener noreferrer">camelcamelcamel</a>
+      <a href="https://www.coingecko.com/it" target="_blank" rel="noopener noreferrer">CoinGecko</a>
+      <a href="https://www.stripe.com" target="_blank" rel="noopener noreferrer">Stripe</a>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    <span>© <span id="year"></span> Risparmio Radar · dati indicativi, non consulenza finanziaria</span>
+    <span>Nessun dato personale inviato · localStorage only</span>
+  </div>
+</footer>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script src="assets/data.js"></script>
+<script src="assets/engine.js"></script>
+<script src="assets/app.js"></script>
+</body>
+</html>
