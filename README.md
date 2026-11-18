@@ -1,5 +1,7 @@
 # Risparmio Radar
 
+**Live:** https://rega07cr.github.io/risparmio-radar/
+
 Webapp statica (HTML + CSS + JavaScript, zero build, zero dipendenze) per:
 
 1. **Offerte tech** — catalogo con punteggio di convenienza calcolato su sconto reale vs media 90 giorni, posizione nella forbice dei prezzi, recensioni, affidabilità del venditore. Segnala i listini gonfiati.
