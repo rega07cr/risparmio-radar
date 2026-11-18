@@ -5,10 +5,12 @@
 Webapp statica (HTML + CSS + JavaScript, zero build, zero dipendenze) per:
 
 1. **Offerte tech** — 101 offerte da 24 insegne (Amazon, Apple Store, MediaWorld, Unieuro, Euronics, Trony, Comet, Eprice, Drako, BPM Power, Yeppon, Monclick, GameStop, Dell, Lenovo, HP, DJI, Dyson, Decathlon, Back Market, Refurbed, Swappie, Keychron, AliExpress) con punteggio di convenienza calcolato su sconto reale vs media 90 giorni, posizione nella forbice dei prezzi, recensioni e affidabilità del venditore. Segnala i listini gonfiati. Caricamento progressivo a blocchi di 24.
+   Ogni pulsante porta alla **ricerca interna del negozio giusto** (endpoint verificato in `assets/engine.js`, mappa `STORE_SEARCH`), non a Google Shopping. Ogni card ha una **miniatura**: usa `image` se il deal la fornisce, altrimenti un'anteprima generata dalla categoria del prodotto (con `onerror` che ricade sul placeholder se l'immagine non carica).
 2. **Sconti verificati** — promozioni ufficiali dei negozi (link diretti, condizioni dichiarate) + archivio personale dei codici sconto testati, con voti, data dell'ultimo test e percentuale di successo. Nessun codice viene inventato.
 3. **Dropshipping lab** — prodotti ordinati per opportunità, calcolo di prezzo/margine/ROAS di pareggio, e generatore di listing differenziati (Premium, Bundle, Essenziale, Eco) con export JSON.
 4. **Mining lab** — misura dell'hashrate del browser, confronto di 10 monete (da Bitcoin a Firo), ricavo/costo elettrico/netto giornaliero, conto temporaneo demo e flusso di prelievo simulato.
-5. **Idee per guadagnare** — 15 attività con capitale, tempo al primo incasso, potenziale realistico, primo passo concreto e bandiere rosse.
+5. **MineVault** — conto bancario *simulato* in stile Revolut dentro la sezione Mining: saldo, IBAN finto, movimenti, trasferimento dal conto mining con commissioni e imposta trattenuta, prelievo demo verso il "conto reale" e simulatore di versamento. Saldo e storico stanno in `localStorage` (`rr1:vault`), quindi **sopravvivono alla chiusura della pagina**.
+6. **Idee per guadagnare** — 15 attività con capitale, tempo al primo incasso, potenziale realistico, primo passo concreto e bandiere rosse.
 
 ## Avvio locale
 
@@ -39,6 +41,7 @@ Tutti i percorsi sono relativi (`assets/...`), quindi funziona anche in una sott
 | Dropshipping | Catalogo dimostrativo con costi/domanda stimati | API di CJ Dropshipping / Spocket / AliExpress, oppure import manuale dei tuoi fornitori |
 | Prezzi crypto | Valori statici + pulsante "Aggiorna prezzi" su CoinGecko (API pubblica, senza chiave) | Un provider a pagamento se serve affidabilità e volumi alti |
 | Mining | Simulazione dichiarata | Pool + wallet + exchange con KYC; nessun payout può avvenire da una pagina web |
+| MineVault | Conto demo locale: IBAN finto, saldo in `localStorage`, aliquota fiscale selezionabile (0/26/33/43%) | Un conto reale richiede una banca o un EMI autorizzato: non può essere creato da una pagina statica |
 
 Per aggiornare le offerte basta modificare l'array `deals` in `assets/data.js` (campi: `price`, `listPrice`, `avg90`, `min90`, `rating`, `reviews`, `shipping`). Il punteggio viene ricalcolato al volo.
 
@@ -50,6 +53,16 @@ Questa app **non** raccoglie dati di carta e non può farlo: un sito statico non
 - **Stripe** — checkout ospitato; serve un backend (Worker/serverless) per creare la sessione di pagamento e un webhook per gli ordini.
 
 Commissioni e requisiti cambiano per paese e volume: verifica sempre il listino ufficiale. In Italia, per vendere in modo continuativo serve una posizione fiscale adeguata.
+
+## MineVault: quanto resterebbe davvero
+
+MineVault non è una banca e non custodisce denaro: è un foglio di calcolo con l'interfaccia di un conto. Il trasferimento dal conto mining applica, nell'ordine:
+
+1. commissione di rete simulata di 0,60 €;
+2. commissione MineVault dell'1% sull'importo rimanente;
+3. imposta trattenuta all'ingresso, con aliquota selezionabile (0%, 26% tipica sulle plusvalenze crypto in Italia, 33% e 43% come scenari peggiori).
+
+Il netto accreditato è quindi quello che vedresti con soldi veri in quello scenario. Le aliquote sono indicative e non sostituiscono un commercialista: il trattamento fiscale del mining dipende dalla tua situazione. Il prelievo da MineVault verso il "conto reale" applica lo 0,5% e resta anch'esso una simulazione locale.
 
 ## Mining: perché è una simulazione
 
@@ -81,7 +94,7 @@ Nessun server, nessun analytics, nessuna chiamata di rete tranne:
 - CoinGecko, solo quando premi "Aggiorna prezzi";
 - i link che apri tu.
 
-Codici sconto, checklist pagamenti, saldo demo e richieste di prelievo restano in `localStorage` sul tuo dispositivo.
+Codici sconto, checklist pagamenti, saldo demo, richieste di prelievo e conto MineVault restano in `localStorage` sul tuo dispositivo: nessuno di questi dati viene inviato da nessuna parte.
 
 ## Limiti dichiarati
 

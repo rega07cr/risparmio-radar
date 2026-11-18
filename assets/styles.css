@@ -205,6 +205,24 @@ input[type="checkbox"]{accent-color:var(--mint);width:16px;height:16px;flex:none
 .deal-cat{font-size:.62rem;letter-spacing:.16em;text-transform:uppercase;color:var(--muted)}
 .deal-merchant{font-size:.68rem;color:var(--mint);border:1px solid rgba(103,232,182,.25);padding:2px 8px;border-radius:99px;white-space:nowrap}
 .deal h3{font-size:1rem;line-height:1.35;margin-top:2px}
+.deal-thumb{
+  --h:160;position:relative;height:106px;border-radius:12px;overflow:hidden;
+  border:1px solid var(--line-soft);display:grid;place-items:center;
+  background:
+    radial-gradient(120% 130% at 20% 12%,hsl(var(--h) 62% 30% / .9),transparent 62%),
+    linear-gradient(150deg,hsl(calc(var(--h) + 26) 46% 15%),#06100e 82%);
+}
+.deal-thumb::before{
+  content:"";position:absolute;inset:0;opacity:.45;
+  background-image:linear-gradient(rgba(255,255,255,.07) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.07) 1px,transparent 1px);
+  background-size:24px 24px;
+  -webkit-mask-image:radial-gradient(circle at 50% 55%,#000 22%,transparent 78%);
+  mask-image:radial-gradient(circle at 50% 55%,#000 22%,transparent 78%);
+}
+.deal-thumb img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:2}
+.thumb-icon{position:relative;z-index:1;width:38px;height:38px;fill:none;stroke:rgba(233,246,240,.6);stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
+.thumb-mono{position:absolute;top:8px;left:11px;z-index:1;font-family:'Sora',sans-serif;font-size:.56rem;letter-spacing:.2em;text-transform:uppercase;color:rgba(233,246,240,.38)}
+.thumb-tag{position:absolute;right:9px;bottom:6px;z-index:1;font-size:.5rem;letter-spacing:.08em;text-transform:uppercase;color:rgba(233,246,240,.26)}
 .deal-feats{list-style:none;display:flex;flex-wrap:wrap;gap:5px}
 .deal-feats li{font-size:.68rem;color:rgba(233,246,240,.68);background:rgba(255,255,255,.04);border:1px solid var(--line-soft);padding:3px 8px;border-radius:6px}
 .price-line{display:flex;align-items:flex-end;gap:8px;flex-wrap:wrap}
@@ -410,6 +428,40 @@ input[type="checkbox"]{accent-color:var(--mint);width:16px;height:16px;flex:none
 .math-line span{color:var(--muted)}
 .math-line b{font-variant-numeric:tabular-nums;color:var(--text)}
 
+/* ---------- MineVault ---------- */
+.vault{display:grid;grid-template-columns:minmax(0,.85fr) minmax(0,1.15fr);gap:14px;margin-bottom:22px}
+.vault-card{
+  display:flex;flex-direction:column;gap:14px;padding:20px;border-radius:var(--radius);position:relative;overflow:hidden;
+  border:1px solid rgba(103,232,182,.22);box-shadow:var(--shadow);
+  background:radial-gradient(140% 120% at 8% 0%,rgba(103,232,182,.2),transparent 58%),linear-gradient(160deg,#0e2a22,#08161a 72%);
+}
+.vault-card::after{content:"";position:absolute;right:-46px;top:-46px;width:170px;height:170px;border-radius:50%;border:1px solid rgba(216,255,107,.16)}
+.vault-head{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.vault-brand{font-family:'Sora',sans-serif;font-size:1rem;font-weight:700;letter-spacing:-.02em}
+.vault-brand span{color:var(--mint)}
+.vault-balance small{display:block;font-size:.6rem;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);margin-bottom:4px}
+.vault-balance b{font-family:'Sora',sans-serif;font-size:2.3rem;letter-spacing:-.045em;line-height:1;font-variant-numeric:tabular-nums}
+.vault-iban{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:.64rem;color:var(--muted)}
+.vault-iban code{font-family:ui-monospace,monospace;font-size:.72rem;color:var(--text);letter-spacing:.04em}
+.vault-copy{border:1px solid var(--line);border-radius:99px;padding:2px 9px;font-size:.58rem;letter-spacing:.06em;text-transform:uppercase;color:var(--mint)}
+.vault-copy:hover{border-color:rgba(103,232,182,.5)}
+.vault-rows{display:flex;flex-direction:column;gap:6px;border-top:1px solid rgba(255,255,255,.09);padding-top:12px}
+.vault-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:auto}
+.vault-panel{display:flex;flex-direction:column;gap:10px;padding:20px;border-radius:var(--radius);border:1px solid var(--line);background:linear-gradient(165deg,rgba(255,255,255,.045),rgba(255,255,255,.012))}
+.vault-panel .card-head{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.vault-panel h3{font-size:1rem}
+.vault-panel h4{font-size:.82rem;font-family:'Sora',sans-serif}
+.vault-panel .math-box{margin-top:2px}
+.vault-config{display:grid;gap:10px;margin-top:2px}
+.vault-calc-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;align-items:end;padding:12px;border-radius:10px;border:1px solid var(--line-soft);background:rgba(0,0,0,.18)}
+.vault-calc-out small{display:block;font-size:.58rem;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.vault-calc-out b{display:block;font-family:'Sora',sans-serif;font-size:1.24rem;color:var(--lime);font-variant-numeric:tabular-nums}
+.vault-calc-out .fine{margin-top:2px}
+.vault-tx-list{display:flex;flex-direction:column;gap:8px}
+.vault-tx-item{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 12px;border-radius:9px;border:1px solid var(--line-soft);background:rgba(0,0,0,.2);font-size:.76rem}
+.vault-tx-item small{display:block;font-size:.64rem;color:var(--muted);margin-top:2px}
+.vault-tx-item b{font-variant-numeric:tabular-nums}
+
 /* ---------- ideas ---------- */
 .grid-ideas{grid-template-columns:repeat(auto-fill,minmax(300px,1fr))}
 .idea{display:flex;flex-direction:column;gap:10px;padding:18px;border-radius:var(--radius);border:1px solid var(--line);background:linear-gradient(165deg,rgba(255,255,255,.045),rgba(255,255,255,.012));transition:transform .2s,border-color .2s}
@@ -456,6 +508,7 @@ input[type="checkbox"]{accent-color:var(--mint);width:16px;height:16px;flex:none
 @media (max-width:1080px){
   .toolbar{grid-template-columns:1fr 1fr}
   .split,.split-wide{grid-template-columns:1fr}
+  .vault{grid-template-columns:1fr}
   .side-card{position:static}
   .topbar-meta{display:none}
 }
@@ -479,6 +532,7 @@ input[type="checkbox"]{accent-color:var(--mint);width:16px;height:16px;flex:none
   .grid{grid-template-columns:1fr}
   .deal:hover{transform:none}
   .kpis{grid-template-columns:1fr 1fr}
+  .vault-calc-row{grid-template-columns:1fr}
   .tabs .tab{flex:none}
 }
 @media (prefers-reduced-motion:reduce){

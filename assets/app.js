@@ -74,6 +74,43 @@
   }
   function withdrawFee() { return 0.6; }
 
+  /* ---------------- MineVault: conto bancario demo ----------------
+     Vive in localStorage come il conto mining: chiudendo la pagina non si perde
+     nulla. Nessun dato esce dal dispositivo e nessun euro è reale. */
+  var vault = (function () {
+    var saved = load("vault", null);
+    var v = saved && typeof saved === "object" ? saved : {};
+    return {
+      iban: v.iban || "IT00 MVLT 0942 0000 0000 0000 0001",
+      balance: Number(v.balance) || 0,
+      earned: Number(v.earned) || 0,
+      taxPaid: Number(v.taxPaid) || 0,
+      taxRate: v.taxRate == null ? 26 : Number(v.taxRate),
+      feePct: v.feePct == null ? 1 : Number(v.feePct),
+      calc: v.calc == null ? 100 : Number(v.calc),
+      tx: Array.isArray(v.tx) ? v.tx : []
+    };
+  })();
+
+  function round2(v) { return Math.round((Number(v) || 0) * 100) / 100; }
+
+  function vaultQuote(gross, coin) {
+    var g = Math.max(0, Number(gross) || 0);
+    var networkFee = g > 0 ? Math.min(withdrawFee(), g) : 0;
+    var afterNetwork = Math.max(0, g - networkFee);
+    var vaultFee = afterNetwork * (Number(vault.feePct) || 0) / 100;
+    var taxable = Math.max(0, afterNetwork - vaultFee);
+    var tax = taxable * (Number(vault.taxRate) || 0) / 100;
+    return {
+      gross: g,
+      networkFee: networkFee,
+      vaultFee: vaultFee,
+      taxable: taxable,
+      tax: tax,
+      net: taxable - tax
+    };
+  }
+
   /* ---------------- helpers ---------------- */
   var $ = function (sel, root) { return (root || document).querySelector(sel); };
   var $$ = function (sel, root) { return Array.prototype.slice.call((root || document).querySelectorAll(sel)); };
@@ -189,6 +226,67 @@
     return list;
   }
 
+  /* Miniatura della card: usa d.image se presente (con fallback automatico
+     se l'immagine non carica), altrimenti un'illustrazione generata
+     dalla categoria del prodotto, così nessuna card resta vuota. */
+  var THUMB_ICONS = {
+    audio: '<path d="M4 14v-2a8 8 0 0 1 16 0v2"/><rect x="2.4" y="13.4" width="4.2" height="7.2" rx="2.1"/><rect x="17.4" y="13.4" width="4.2" height="7.2" rx="2.1"/>',
+    screen: '<rect x="2.4" y="4" width="19.2" height="12.4" rx="2"/><path d="M8 20.4h8M12 16.4v4"/>',
+    laptop: '<rect x="3.6" y="5" width="16.8" height="10.6" rx="1.6"/><path d="M2 19.2h20"/>',
+    phone: '<rect x="7" y="2.4" width="10" height="19.2" rx="2.4"/><path d="M10.8 18.4h2.4"/>',
+    gamepad: '<path d="M8 8.4h8a4.8 4.8 0 0 1 0 9.6H8a4.8 4.8 0 0 1 0-9.6Z"/><path d="M9.6 11.6v3.4M7.9 13.3h3.4"/><circle cx="16" cy="12.2" r=".85"/><circle cx="17.9" cy="14.2" r=".85"/>',
+    camera: '<rect x="2.4" y="6.6" width="19.2" height="12.8" rx="2.4"/><circle cx="12" cy="13" r="3.4"/><path d="M8.2 6.6 9.7 4.4h4.6l1.5 2.2"/>',
+    drive: '<rect x="3" y="4.2" width="18" height="6.6" rx="2"/><rect x="3" y="13.2" width="18" height="6.6" rx="2"/><path d="M6.4 7.5h.01M6.4 16.5h.01"/>',
+    network: '<path d="M2.6 8.6a15 15 0 0 1 18.8 0"/><path d="M5.6 12.2a10.4 10.4 0 0 1 12.8 0"/><path d="M8.6 15.7a5.8 5.8 0 0 1 6.8 0"/><circle cx="12" cy="19.2" r="1"/>',
+    home: '<path d="M3.6 11 12 3.6 20.4 11"/><path d="M6.2 10v10h11.6V10"/>',
+    wearable: '<circle cx="12" cy="12" r="5.4"/><path d="M9.2 6.8 9.6 3h4.8l.4 3.8M9.2 17.2 9.6 21h4.8l.4-3.8"/><path d="M12 9.8v2.6l1.6 1"/>',
+    keyboard: '<rect x="2.2" y="6.2" width="19.6" height="11.6" rx="2"/><path d="M5.8 10h.01M9.3 10h.01M12.8 10h.01M16.3 10h.01M7 14h10"/>',
+    chip: '<rect x="6.6" y="6.6" width="10.8" height="10.8" rx="2"/><path d="M10 3v3.6M14 3v3.6M10 17.4V21M14 17.4V21M3 10h3.6M3 14h3.6M17.4 10H21M17.4 14H21"/>',
+    bolt: '<path d="M13 2.6 5.6 13.4H11l-1 8 8-11.6H12l1-7.2Z"/>',
+    device: '<rect x="4" y="4" width="16" height="16" rx="3"/><path d="M8.6 9.4h6.8M8.6 12.6h6.8M8.6 15.8h3.6"/>'
+  };
+
+  function thumbKey(d) {
+    var c = (d.category + " " + d.brand + " " + d.name).toLowerCase();
+    if (/cuffie|audio|speaker|soundbar|earbud|auricolari|sonos|bose|jbl|airpods|momentum|home cinema/.test(c)) return "audio";
+    if (/tv|televisore|proiettore|oled|qled/.test(c)) return "screen";
+    if (/monitor/.test(c)) return "screen";
+    if (/notebook|portatile|laptop|macbook|ultrabook|chromebook/.test(c)) return "laptop";
+    if (/smartphone|iphone|galaxy s|pixel|telefono/.test(c)) return "phone";
+    if (/tablet|ipad|paperwhite|kindle/.test(c)) return "phone";
+    if (/console|gaming|playstation|xbox|switch|dualsense|controller|quest|gamepad/.test(c)) return "gamepad";
+    if (/drone|camera|fotocamera|mirrorless|gopro|osmo|obiettivo|eos|zv-e10/.test(c)) return "camera";
+    if (/ssd|storage|nvme|hard disk|hdd|espansione|microsd/.test(c)) return "drive";
+    if (/router|rete|wifi|mesh|deco|nighthawk/.test(c)) return "network";
+    if (/aspirapolvere|dyson|purificatore|robot|casa|nest|chromecast|smart home/.test(c)) return "home";
+    if (/smartwatch|forerunner|fitness|garmin/.test(c)) return "wearable";
+    if (/tastiera|keychron|keyboard|mouse|superlight|master/.test(c)) return "keyboard";
+    if (/gpu|rtx|radeon|geforce|cpu|ryzen|intel|alimentatore|scheda madre|ram/.test(c)) return "chip";
+    if (/power bank|batteria|caricatore|nexode|alimentazione/.test(c)) return "bolt";
+    return "device";
+  }
+
+  function thumbHue(seed) {
+    var h = 0;
+    var s = String(seed || "");
+    for (var i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) % 360;
+    return h;
+  }
+
+  function dealThumb(d) {
+    var hue = thumbHue(d.brand + d.id);
+    var mono = (d.brand || d.merchant || "?").split(/\s+/).slice(0, 2).map(function (w) { return w.charAt(0); }).join("");
+    var img = d.image
+      ? '<img src="' + E.escapeHtml(d.image) + '" alt="" loading="lazy" decoding="async" onerror="this.remove()">'
+      : "";
+    return '<div class="deal-thumb" style="--h:' + hue + '" aria-hidden="true">' +
+      img +
+      '<span class="thumb-mono">' + E.escapeHtml(mono) + '</span>' +
+      '<svg class="thumb-icon" viewBox="0 0 24 24">' + (THUMB_ICONS[thumbKey(d)] || THUMB_ICONS.device) + '</svg>' +
+      (d.image ? "" : '<span class="thumb-tag">anteprima generata</span>') +
+      '</div>';
+  }
+
   function dealCard(d) {
     var s = E.dealScore(d);
     var saving = d.avg90 - d.price;
@@ -208,6 +306,7 @@
 
     return '' +
       '<article class="deal" data-deal="' + E.escapeHtml(d.id) + '">' +
+        dealThumb(d) +
         '<div class="deal-top">' +
           '<div><span class="deal-cat">' + E.escapeHtml(d.category) + ' · ' + E.escapeHtml(d.brand) + '</span></div>' +
           '<span class="deal-merchant">' + E.escapeHtml(d.merchant) + '</span>' +
@@ -230,8 +329,8 @@
             '<button class="icon-btn" data-why="' + E.escapeHtml(d.id) + '" aria-label="Perché questo punteggio" aria-expanded="false">' +
               '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>' +
             '</button>' +
-            '<a class="btn btn-primary btn-sm" href="' + E.searchUrl(d) + '" target="_blank" rel="noopener noreferrer">' +
-              (d.merchant === "Amazon" || d.merchant === "eBay" ? "Cerca su " + d.merchant : "Confronta prezzi") +
+            '<a class="btn btn-primary btn-sm" href="' + E.offerUrl(d) + '" target="_blank" rel="noopener noreferrer" aria-label="' + E.escapeHtml(E.storeLabel(d) + ": " + d.name) + '">' +
+              E.escapeHtml(E.storeLabel(d)) +
             '</a>' +
           '</div>' +
         '</div>' +
@@ -731,7 +830,7 @@
       '<div class="account-line"><span>Elettricità</span><b class="neg">−' + E.eur(e.powerCostDay) + ' / giorno</b></div>' +
       '<div class="account-line"><span>Netto</span><b class="' + (e.netDay >= 0 ? "pos" : "neg") + '">' + E.eurSmall(e.netDay) + ' / giorno</b></div>' +
       '<div class="account-line"><span>Tempo al payout</span><b>' + E.formatDuration(e.etaDays) + '</b></div>' +
-      '<p class="fine">Nessun euro reale: il saldo cresce al ritmo stimato dal calcolo, moltiplicato per l\'acceleratore demo. Il prelievo crea una richiesta locale, non un trasferimento.</p>' +
+      '<p class="fine">Nessun euro reale: il saldo cresce al ritmo stimato dal calcolo, moltiplicato per l\'acceleratore demo. Il saldo resta salvato su questo dispositivo: puoi chiudere la pagina e ritrovarlo. Trasferiscilo su MineVault qui sotto per vedere quanto arriva davvero dopo commissioni e tasse.</p>' +
       '<button class="btn btn-primary btn-sm" data-mining="toggle">' + (state.mining.running ? "Ferma simulazione" : "Avvia simulazione") + '</button>' +
       '<button class="btn btn-ghost btn-sm" data-mining="reset">Azzera conto</button>';
   }
@@ -821,12 +920,229 @@
     acc.seconds += elapsed;
     save("accounts", accounts);
     updateAccountDom();
+    updateVaultLive();
   }
 
   function startMiningTimer() {
     if (miningTimer) return;
     miningTimer = setInterval(accrueMining, 1000);
     document.addEventListener("visibilitychange", function () { if (state.mining.running) accrueMining(); });
+  }
+
+  /* ============================================================
+     MINEVAULT — conto bancario demo (stile Revolut)
+     ============================================================ */
+  function vaultTxList() {
+    if (!vault.tx.length) {
+      return '<div class="empty-state" style="margin-top:10px">Nessun movimento. Trasferisci il saldo del conto mining per vedere il primo accredito: resta salvato anche se chiudi la pagina.</div>';
+    }
+    return '<div class="vault-tx-list">' + vault.tx.slice(0, 8).map(function (t) {
+      var when = new Date(t.at).toLocaleString("it-IT", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" });
+      var detail = t.kind === "in"
+        ? "da mining " + (t.symbol || "") + " · tasse " + E.eur(t.tax || 0)
+        : "verso conto reale (demo)";
+      return '<div class="vault-tx-item">' +
+        '<div><b class="' + (t.kind === "in" ? "pos" : "neg") + '">' + (t.kind === "in" ? "+" : "−") + E.eur(t.amount) + '</b>' +
+        '<small>' + E.escapeHtml(detail) + ' · ' + when + '</small></div>' +
+        '<span class="badge ' + (t.kind === "in" ? "badge-good" : "badge-warn") + '">' + (t.kind === "in" ? "accredito" : "prelievo") + '</span>' +
+        '</div>';
+    }).join("") + '</div>';
+  }
+
+  function renderVault() {
+    var coin = coinById(state.mining.coinId);
+    var acc = accountOf(coin);
+    var q = vaultQuote(acc.balance, coin);
+    var e = currentEcon(coin);
+    var monthlyNet = e.netDay * 30.44 * (1 - vault.taxRate / 100);
+    var taxOptions = [
+      { v: 0, label: "0% · nessuna imposta" },
+      { v: 26, label: "26% · plusvalenze crypto (IT)" },
+      { v: 33, label: "33% · ipotesi aliquota alta" },
+      { v: 43, label: "43% · reddito da lavoro" }
+    ];
+    var el = $("#minevault");
+    el.innerHTML = '' +
+      '<div class="vault-card">' +
+        '<div class="vault-head">' +
+          '<span class="vault-brand">Mine<span>Vault</span></span>' +
+          '<span class="demo-tag">conto demo</span>' +
+        '</div>' +
+        '<div class="vault-balance"><small>Saldo disponibile</small><b data-vault-balance>' + E.eur(vault.balance) + '</b></div>' +
+        '<div class="vault-iban"><span>IBAN (finto)</span><code>' + E.escapeHtml(vault.iban) + '</code>' +
+          '<button class="vault-copy" data-vault="copy" type="button" aria-label="Copia l&#39;IBAN demo">Copia</button>' +
+        '</div>' +
+        '<div class="vault-rows">' +
+          '<div class="account-line"><span>Accrediti simulati</span><b>' + E.eur(vault.earned) + '</b></div>' +
+          '<div class="account-line"><span>Tasse già trattenute</span><b>' + E.eur(vault.taxPaid) + '</b></div>' +
+          '<div class="account-line"><span>Movimenti registrati</span><b>' + vault.tx.length + '</b></div>' +
+        '</div>' +
+        '<div class="vault-actions">' +
+          '<button class="btn btn-ghost btn-sm" data-vault="withdraw" type="button"' + (vault.balance > 0 ? "" : " disabled") + '>Preleva sul conto reale</button>' +
+          '<button class="btn btn-ghost btn-sm" data-vault="reset" type="button"' + (vault.balance > 0 || vault.tx.length ? "" : " disabled") + '>Azzera conto</button>' +
+        '</div>' +
+      '</div>' +
+      '<div class="vault-panel">' +
+        '<div class="card-head"><h3>Trasferimento mining → MineVault</h3><span class="tag">commesse e tasse incluse</span></div>' +
+        '<p class="fine">Dal conto temporaneo di <b>' + E.escapeHtml(coin.name) + '</b>: commissione di rete simulata ' + E.eur(withdrawFee()) +
+          ', commissione MineVault ' + vault.feePct + '% e imposta ' + vault.taxRate + '% trattenuta all\'ingresso. È esattamente ciò che succederebbe con soldi veri.</p>' +
+        '<div class="math-box">' +
+          '<div class="math-line"><span>Saldo mining</span><b data-vault-gross>' + E.eurSmall(q.gross) + '</b></div>' +
+          '<div class="math-line"><span>Commissione di rete</span><b class="neg" data-vault-netfee>−' + E.eur(q.networkFee) + '</b></div>' +
+          '<div class="math-line"><span>Commissione MineVault (' + vault.feePct + '%)</span><b class="neg" data-vault-fee>−' + E.eur(q.vaultFee) + '</b></div>' +
+          '<div class="math-line"><span>Imposta ' + vault.taxRate + '%</span><b class="neg" data-vault-tax>−' + E.eur(q.tax) + '</b></div>' +
+          '<div class="math-line"><span>Accredito netto</span><b class="pos" data-vault-net>' + E.eur(q.net) + '</b></div>' +
+        '</div>' +
+        '<button class="btn btn-primary btn-sm" data-vault="transfer" type="button" style="width:100%;margin-top:12px">Trasferisci</button>' +
+        '<div class="vault-config">' +
+          '<div class="field">' +
+            '<label for="vault-tax">Imposta trattenuta all\'ingresso</label>' +
+            '<select id="vault-tax">' + taxOptions.map(function (t) {
+              return '<option value="' + t.v + '"' + (t.v === vault.taxRate ? " selected" : "") + '>' + t.label + '</option>';
+            }).join("") + '</select>' +
+          '</div>' +
+        '</div>' +
+        '<div class="vault-calc-row">' +
+          '<div class="field"><label for="vault-calc">Simula un versamento (€)</label>' +
+            '<input id="vault-calc" type="number" min="0" step="10" value="' + vault.calc + '"></div>' +
+          '<div class="vault-calc-out"><small>Netto che arriverebbe</small><b id="vault-calc-net">—</b>' +
+            '<span class="fine" id="vault-calc-note"></span></div>' +
+        '</div>' +
+        '<div class="math-box" style="margin-top:14px">' +
+          '<div class="math-line"><span>Netto mining oggi (dopo elettricità)</span><b class="' + (e.netDay >= 0 ? "pos" : "neg") + '">' + E.eurSmall(e.netDay) + ' / giorno</b></div>' +
+          '<div class="math-line"><span>Dopo imposta ' + vault.taxRate + '%</span><b class="' + (monthlyNet >= 0 ? "pos" : "neg") + '">' + E.eurSmall(monthlyNet) + ' / mese</b></div>' +
+          '<div class="math-line"><span>Proiezione a 12 mesi</span><b>' + E.eurSmall(monthlyNet * 12) + '</b></div>' +
+        '</div>' +
+        '<h4 style="margin-top:16px">Movimenti</h4>' +
+        vaultTxList() +
+        '<p class="fine">Saldo e movimenti di MineVault restano in localStorage su questo dispositivo: sopravvivono alla chiusura della pagina, non a un\'eliminazione dei dati del browser. Nessun conto reale, nessun IBAN valido, nessun euro.</p>' +
+      '</div>';
+    updateVaultLive();
+    renderVaultCalc();
+  }
+
+  function updateVaultLive() {
+    var coin = coinById(state.mining.coinId);
+    var acc = accountOf(coin);
+    var q = vaultQuote(acc.balance, coin);
+    var set = function (sel, text) {
+      var node = $(sel);
+      if (node) node.textContent = text;
+    };
+    set("[data-vault-gross]", E.eurSmall(q.gross));
+    set("[data-vault-netfee]", "−" + E.eur(q.networkFee));
+    set("[data-vault-fee]", "−" + E.eur(q.vaultFee));
+    set("[data-vault-tax]", "−" + E.eur(q.tax));
+    set("[data-vault-net]", E.eur(q.net));
+    var btn = $('[data-vault="transfer"]');
+    if (btn) {
+      var enough = acc.balance >= coin.minPayoutEur;
+      btn.disabled = !enough;
+      btn.textContent = enough
+        ? "Trasferisci " + E.eur(q.gross) + " → MineVault"
+        : "Mancano " + E.eur(Math.max(0, coin.minPayoutEur - acc.balance)) + " alla soglia di " + E.eur(coin.minPayoutEur);
+    }
+  }
+
+  function renderVaultCalc() {
+    var input = $("#vault-calc");
+    var amount = input ? Number(input.value) : vault.calc;
+    var q = vaultQuote(amount, coinById(state.mining.coinId));
+    var net = $("#vault-calc-net");
+    var note = $("#vault-calc-note");
+    if (net) net.textContent = E.eur(q.net);
+    if (note) {
+      note.textContent = amount > 0
+        ? "Su " + E.eur(amount) + " lordi: commissioni " + E.eur(q.networkFee + q.vaultFee) + " + imposta " + E.eur(q.tax) + "."
+        : "Inserisci un importo per vedere il netto.";
+    }
+  }
+
+  function doVaultTransfer() {
+    var coin = coinById(state.mining.coinId);
+    var acc = accountOf(coin);
+    if (acc.balance < coin.minPayoutEur) {
+      toast("Servono almeno " + E.eur(coin.minPayoutEur) + " sul conto mining");
+      return;
+    }
+    var q = vaultQuote(acc.balance, coin);
+    vault.balance = round2(vault.balance + q.net);
+    vault.earned = round2(vault.earned + q.net);
+    vault.taxPaid = round2(vault.taxPaid + q.tax);
+    vault.tx.unshift({
+      id: "v" + Date.now().toString(36),
+      kind: "in",
+      amount: round2(q.net),
+      gross: round2(q.gross),
+      fee: round2(q.networkFee + q.vaultFee),
+      tax: round2(q.tax),
+      symbol: coin.symbol,
+      coin: coin.id,
+      at: new Date().toISOString()
+    });
+    if (vault.tx.length > 40) vault.tx.length = 40;
+    acc.balance = 0;
+    acc.seconds = 0;
+    save("accounts", accounts);
+    save("vault", vault);
+    renderVault();
+    renderMiningAccount();
+    renderMiningConsole();
+    updateAccountDom();
+    toast("Accreditati " + E.eur(q.net) + " su MineVault · demo, nessun euro reale");
+  }
+
+  function doVaultWithdraw() {
+    if (vault.balance <= 0) return;
+    var amount = round2(vault.balance);
+    var fee = round2(amount * 0.005);
+    vault.tx.unshift({
+      id: "v" + Date.now().toString(36),
+      kind: "out",
+      amount: round2(amount - fee),
+      gross: amount,
+      fee: fee,
+      tax: 0,
+      at: new Date().toISOString()
+    });
+    if (vault.tx.length > 40) vault.tx.length = 40;
+    vault.balance = 0;
+    save("vault", vault);
+    renderVault();
+    toast("Prelievo demo di " + E.eur(amount - fee) + " verso il conto reale · non eseguito");
+  }
+
+  function doVaultReset() {
+    vault = { iban: vault.iban, balance: 0, earned: 0, taxPaid: 0, taxRate: vault.taxRate, feePct: vault.feePct, calc: vault.calc, tx: [] };
+    save("vault", vault);
+    renderVault();
+    toast("MineVault azzerato");
+  }
+
+  function bindVault() {
+    var el = $("#minevault");
+    el.addEventListener("click", function (e) {
+      var action = e.target.closest("[data-vault]");
+      if (!action) return;
+      var what = action.getAttribute("data-vault");
+      if (what === "transfer") doVaultTransfer();
+      if (what === "withdraw") doVaultWithdraw();
+      if (what === "reset") doVaultReset();
+      if (what === "copy") copyText(vault.iban, "IBAN demo copiato");
+    });
+    el.addEventListener("change", function (e) {
+      if (e.target.id !== "vault-tax") return;
+      vault.taxRate = Number(e.target.value) || 0;
+      save("vault", vault);
+      renderVault();
+      toast("Imposta impostata al " + vault.taxRate + "%");
+    });
+    el.addEventListener("input", function (e) {
+      if (e.target.id !== "vault-calc") return;
+      vault.calc = Number(e.target.value) || 0;
+      save("vault", vault);
+      renderVaultCalc();
+    });
   }
 
   function renderMathBox() {
@@ -935,22 +1251,22 @@
     $("#hash-value").addEventListener("input", function (e) {
       m.hashValue = Number(e.target.value) || 0;
       save("mining", m);
-      renderCoinsTable(); renderMiningAccount(); renderMiningConsole(); renderMathBox();
+      renderCoinsTable(); renderMiningAccount(); renderMiningConsole(); renderMathBox(); renderVault();
     });
     $("#hash-unit").addEventListener("change", function (e) {
       m.hashUnit = Number(e.target.value) || 1;
       save("mining", m);
-      renderCoinsTable(); renderMiningAccount(); renderMiningConsole(); renderMathBox();
+      renderCoinsTable(); renderMiningAccount(); renderMiningConsole(); renderMathBox(); renderVault();
     });
     $("#power-watts").addEventListener("input", function (e) {
       m.watts = Number(e.target.value) || 0;
       save("mining", m);
-      renderCoinsTable(); renderMiningAccount(); renderMiningConsole(); renderMathBox();
+      renderCoinsTable(); renderMiningAccount(); renderMiningConsole(); renderMathBox(); renderVault();
     });
     $("#power-price").addEventListener("input", function (e) {
       m.kwh = Number(e.target.value) || 0;
       save("mining", m);
-      renderCoinsTable(); renderMiningAccount(); renderMiningConsole(); renderMathBox();
+      renderCoinsTable(); renderMiningAccount(); renderMiningConsole(); renderMathBox(); renderVault();
     });
     $("#demo-speed").addEventListener("change", function (e) {
       m.speed = Number(e.target.value) || 1;
@@ -961,7 +1277,7 @@
       m.coinId = e.target.value;
       miningLastTick = Date.now();
       save("mining", m);
-      renderCoinsTable(); renderMiningAccount(); renderMiningConsole();
+      renderCoinsTable(); renderMiningAccount(); renderMiningConsole(); renderVault();
     });
     $("#coins-table").addEventListener("click", function (e) {
       var row = e.target.closest("[data-coin]");
@@ -969,7 +1285,7 @@
       m.coinId = row.getAttribute("data-coin");
       save("mining", m);
       $("#mining-coin").value = m.coinId;
-      renderCoinsTable(); renderMiningAccount(); renderMiningConsole();
+      renderCoinsTable(); renderMiningAccount(); renderMiningConsole(); renderVault();
       $("#mining-account").scrollIntoView({ behavior: "smooth", block: "center" });
     });
     $("#mining-account").addEventListener("click", function (e) {
@@ -1126,9 +1442,11 @@
     renderProducts();
     renderMiningControls();
     bindMining();
+    bindVault();
     renderCoinsTable();
     renderMiningAccount();
     renderMiningConsole();
+    renderVault();
     renderMathBox();
     renderIdeaFilters();
     bindIdeas();
@@ -1153,7 +1471,7 @@
     var initial = (location.hash || "").replace("#", "");
     setTab(initial || "offerte", false);
     if (state.mining.running) state.mining.running = false;
-    window.addEventListener("beforeunload", function () { save("accounts", accounts); });
+    window.addEventListener("beforeunload", function () { save("accounts", accounts); save("vault", vault); });
   }
 
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init);

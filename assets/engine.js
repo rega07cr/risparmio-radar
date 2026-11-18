@@ -97,11 +97,61 @@
     };
   }
 
-  function searchUrl(deal) {
-    var q = encodeURIComponent(deal.name);
-    if (deal.merchant === "Amazon") return "https://www.amazon.it/s?k=" + q;
-    if (deal.merchant === "eBay") return "https://www.ebay.it/sch/i.html?_nkw=" + q;
-    return "https://www.google.com/search?tbm=shop&q=" + encodeURIComponent(deal.name + " " + deal.merchant);
+  /* Ricerca interna dei negozi: ogni voce è un endpoint verificato (HTTP 200)
+     o, per i negozi con ricerca solo in JavaScript, la home ufficiale.
+     home: true  -> non esiste un URL di ricerca stabile, si apre il negozio.
+     slug: true  -> il negozio vuole le parole nel path, non in query string. */
+  var STORE_SEARCH = {
+    "Amazon": { url: "https://www.amazon.it/s?k=", label: "Cerca su Amazon" },
+    "eBay": { url: "https://www.ebay.it/sch/i.html?_nkw=", label: "Cerca su eBay" },
+    "MediaWorld": { url: "https://www.mediaworld.it/it/search.html?query=", label: "Cerca su MediaWorld" },
+    "Unieuro": { url: "https://www.unieuro.it/online/search?text=", label: "Cerca su Unieuro" },
+    "Euronics": { url: "https://www.euronics.it/search?q=", label: "Cerca su Euronics" },
+    "BPM Power": { url: "https://www.bpm-power.com/it/ricerca?q=", label: "Cerca su BPM Power" },
+    "Drako": { url: "https://www.drako.it/drako_catalog/advanced_search_result.php?keywords=", label: "Cerca su Drako" },
+    "Apple Store": { url: "https://www.apple.com/it/search?search=", label: "Cerca su Apple" },
+    "Dell": { url: "https://www.dell.com/it-it/search/", label: "Cerca su Dell", slug: true },
+    "Lenovo": { url: "https://www.lenovo.com/it/it/search?text=", label: "Cerca su Lenovo" },
+    "HP": { url: "https://www.hp.com/it-it/shop/search?q=", label: "Cerca su HP" },
+    "DJI Store": { url: "https://store.dji.com/it/product-search?q=", label: "Cerca su DJI" },
+    "Dyson": { url: "https://www.dyson.it/risultati-di-ricerca?searchText=", label: "Cerca su Dyson" },
+    "Decathlon": { url: "https://www.decathlon.it/search?Ntt=", label: "Cerca su Decathlon" },
+    "GameStop": { url: "https://www.gamestop.it/SearchResult/QuickSearch?q=", label: "Cerca su GameStop" },
+    "Trony": { url: "https://www.trony.it/", label: "Apri Trony", home: true },
+    "Comet": { url: "https://www.comet.it/search?q=", label: "Cerca su Comet" },
+    "Eprice": { url: "https://www.eprice.it/search?q=", label: "Cerca su ePrice" },
+    "Monclick": { url: "https://www.monclick.it/", label: "Apri Monclick", home: true },
+    "Yeppon": { url: "https://www.yeppon.it/ricerca?q=", label: "Cerca su Yeppon" },
+    "Back Market": { url: "https://www.backmarket.it/it-it/search?q=", label: "Cerca su Back Market" },
+    "Refurbed": { url: "https://www.refurbed.it/search/?q=", label: "Cerca su Refurbed" },
+    "Swappie": { url: "https://swappie.com/it/", label: "Apri Swappie", home: true },
+    "Keychron": { url: "https://www.keychron.com/search?q=", label: "Cerca su Keychron" },
+    "AliExpress": { url: "https://it.aliexpress.com/w/wholesale-", suffix: ".html", label: "Cerca su AliExpress", slug: true }
+  };
+
+  function searchTokens(text, max) {
+    return String(text || "")
+      .replace(/\([^)]*\)/g, " ")
+      .replace(/[^a-zA-Z0-9\s]/g, " ")
+      .split(/\s+/)
+      .filter(function (w) { return w.length > 0; })
+      .slice(0, max || 6)
+      .join("-")
+      .toLowerCase();
+  }
+
+  function offerUrl(deal) {
+    if (deal && deal.productUrl) return deal.productUrl;
+    var store = STORE_SEARCH[deal.merchant];
+    if (!store) return "https://www.google.com/search?tbm=shop&q=" + encodeURIComponent(deal.name + " " + deal.merchant);
+    if (store.home) return store.url;
+    if (store.slug) return store.url + searchTokens(deal.name, 6) + (store.suffix || "");
+    return store.url + encodeURIComponent(deal.name);
+  }
+
+  function storeLabel(deal) {
+    var store = STORE_SEARCH[deal.merchant];
+    return store ? store.label : "Confronta prezzi";
   }
 
   /* ---------------- DROPSHIPPING ---------------- */
@@ -289,7 +339,9 @@
     hashrate: hashrate,
     formatDuration: formatDuration,
     dealScore: dealScore,
-    searchUrl: searchUrl,
+    STORE_SEARCH: STORE_SEARCH,
+    offerUrl: offerUrl,
+    storeLabel: storeLabel,
     opportunity: opportunity,
     TIERS: TIERS,
     ANGLES: ANGLES,
