@@ -4,7 +4,7 @@
 
 Webapp statica (HTML + CSS + JavaScript, zero build, zero dipendenze) per:
 
-1. **Offerte tech** — catalogo con punteggio di convenienza calcolato su sconto reale vs media 90 giorni, posizione nella forbice dei prezzi, recensioni, affidabilità del venditore. Segnala i listini gonfiati.
+1. **Offerte tech** — 101 offerte da 24 insegne (Amazon, Apple Store, MediaWorld, Unieuro, Euronics, Trony, Comet, Eprice, Drako, BPM Power, Yeppon, Monclick, GameStop, Dell, Lenovo, HP, DJI, Dyson, Decathlon, Back Market, Refurbed, Swappie, Keychron, AliExpress) con punteggio di convenienza calcolato su sconto reale vs media 90 giorni, posizione nella forbice dei prezzi, recensioni e affidabilità del venditore. Segnala i listini gonfiati. Caricamento progressivo a blocchi di 24.
 2. **Sconti verificati** — promozioni ufficiali dei negozi (link diretti, condizioni dichiarate) + archivio personale dei codici sconto testati, con voti, data dell'ultimo test e percentuale di successo. Nessun codice viene inventato.
 3. **Dropshipping lab** — prodotti ordinati per opportunità, calcolo di prezzo/margine/ROAS di pareggio, e generatore di listing differenziati (Premium, Bundle, Essenziale, Eco) con export JSON.
 4. **Mining lab** — misura dell'hashrate del browser, confronto di 10 monete (da Bitcoin a Firo), ricavo/costo elettrico/netto giornaliero, conto temporaneo demo e flusso di prelievo simulato.

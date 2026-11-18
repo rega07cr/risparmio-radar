@@ -22,7 +22,7 @@
 
   var state = {
     tab: "offerte",
-    deal: { q: "", cat: "", merchant: "", sort: "score", budget: 1500, topOnly: false },
+    deal: { q: "", cat: "", merchant: "", sort: "score", budget: 2000, topOnly: false, limit: 24 },
     offer: { kind: "", q: "" },
     product: { cat: "", competition: "", sort: "opportunity" },
     selectedProduct: load("selectedProduct", D.products[0].id),
@@ -133,12 +133,14 @@
     var scored = D.deals.map(function (d) { return { d: d, s: E.dealScore(d) }; });
     var best = scored.slice().sort(function (a, b) { return b.s.realDiscount - a.s.realDiscount; })[0];
     var top = scored.filter(function (x) { return x.s.total >= 80; }).length;
+    var merchants = {};
+    D.deals.forEach(function (d) { merchants[d.merchant] = true; });
     var el = $("#hero-stats");
     el.innerHTML =
       '<div class="stat"><div><b>' + D.deals.length + '</b><small>offerte analizzate</small></div><span class="stat-note">snapshot ' + D.meta.snapshot.split("-").reverse().join("/") + '</span></div>' +
       '<div class="stat"><div><b class="pos">−' + E.pct(best.s.realDiscount * 100) + '</b><small>miglior sconto reale</small></div><span class="stat-note">' + E.escapeHtml(best.d.name) + '</span></div>' +
       '<div class="stat"><div><b>' + top + '</b><small>affari con punteggio ≥ 80</small></div><span class="stat-note">su ' + D.deals.length + ' monitorati</span></div>' +
-      '<div class="stat"><div><b>' + D.offers.length + '</b><small>promo ufficiali mappate</small></div><span class="stat-note">link diretti ai negozi</span></div>';
+      '<div class="stat"><div><b>' + Object.keys(merchants).length + '</b><small>negozi monitorati</small></div><span class="stat-note">Amazon, Apple, DJI, Dyson, GameStop…</span></div>';
   }
 
   function dealCategories() {
@@ -242,24 +244,38 @@
       '</article>';
   }
 
+  function resetDealLimit() { state.deal.limit = 24; }
+
   function renderDeals() {
     var list = filteredDeals();
     var grid = $("#deals-grid");
-    grid.innerHTML = list.map(dealCard).join("");
+    var shown = list.slice(0, state.deal.limit);
+    grid.innerHTML = shown.map(dealCard).join("");
     $("#deals-empty").hidden = list.length > 0;
     var top = list.filter(function (d) { return E.dealScore(d).total >= 80; }).length;
-    $("#deal-count").textContent = list.length + (list.length === 1 ? " offerta" : " offerte") + " · " + top + " con punteggio ≥ 80 · ordinate per " +
-      ($("#deal-sort").selectedOptions[0] ? $("#deal-sort").selectedOptions[0].textContent.toLowerCase() : "convenienza");
+    var merchants = {};
+    list.forEach(function (d) { merchants[d.merchant] = true; });
+    var merchantCount = Object.keys(merchants).length;
+    $("#deal-count").textContent = list.length + (list.length === 1 ? " offerta" : " offerte") + " · " + merchantCount + (merchantCount === 1 ? " negozio" : " negozi") + " · " + top + " con punteggio ≥ 80";
+    var more = $("#deal-more");
+    var note = $("#deal-more-note");
+    if (more) {
+      more.hidden = shown.length >= list.length;
+      note.textContent = shown.length >= list.length
+        ? "Hai visto tutte le " + list.length + " offerte con questi filtri."
+        : "Mostrate " + shown.length + " di " + list.length + " offerte · ne restano " + (list.length - shown.length) + ".";
+    }
   }
 
   function bindDeals() {
-    $("#deal-search").addEventListener("input", function (e) { state.deal.q = e.target.value; renderDeals(); });
-    $("#deal-merchant").addEventListener("change", function (e) { state.deal.merchant = e.target.value; renderDeals(); });
-    $("#deal-sort").addEventListener("change", function (e) { state.deal.sort = e.target.value; renderDeals(); });
-    $("#deal-top-only").addEventListener("change", function (e) { state.deal.topOnly = e.target.checked; renderDeals(); });
+    $("#deal-search").addEventListener("input", function (e) { state.deal.q = e.target.value; resetDealLimit(); renderDeals(); });
+    $("#deal-merchant").addEventListener("change", function (e) { state.deal.merchant = e.target.value; resetDealLimit(); renderDeals(); });
+    $("#deal-sort").addEventListener("change", function (e) { state.deal.sort = e.target.value; resetDealLimit(); renderDeals(); });
+    $("#deal-top-only").addEventListener("change", function (e) { state.deal.topOnly = e.target.checked; resetDealLimit(); renderDeals(); });
     $("#deal-budget").addEventListener("input", function (e) {
       state.deal.budget = Number(e.target.value);
-      $("#budget-out").textContent = state.deal.budget >= 1500 ? "1500+ €" : state.deal.budget + " €";
+      $("#budget-out").textContent = state.deal.budget >= 2000 ? "2000+ €" : state.deal.budget + " €";
+      resetDealLimit();
       renderDeals();
     });
     $("#deal-categories").addEventListener("click", function (e) {
@@ -267,6 +283,11 @@
       if (!btn) return;
       state.deal.cat = btn.getAttribute("data-cat");
       $$(".chip", $("#deal-categories")).forEach(function (c) { c.classList.toggle("is-active", c === btn); });
+      resetDealLimit();
+      renderDeals();
+    });
+    $("#deal-more").addEventListener("click", function () {
+      state.deal.limit += 24;
       renderDeals();
     });
     $("#deals-grid").addEventListener("click", function (e) {
