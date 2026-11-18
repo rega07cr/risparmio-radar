@@ -32,6 +32,7 @@
     <button class="tab" data-tab="sconti">Sconti verificati</button>
     <button class="tab" data-tab="dropshipping">Dropshipping</button>
     <button class="tab" data-tab="mining">Mining</button>
+    <button class="tab" data-tab="carrello">Carrello<span class="tab-badge" id="cart-badge" hidden>0</span></button>
     <button class="tab" data-tab="idee">Idee</button>
   </nav>
 
@@ -55,6 +56,7 @@
         </p>
         <div class="hero-actions">
           <button class="btn btn-primary" data-jump="deals-grid">Guarda le offerte ordinate <span aria-hidden="true">→</span></button>
+          <button class="btn btn-ghost" data-tab-link="carrello">Prova un acquisto demo</button>
           <button class="btn btn-ghost" data-tab-link="sconti">Sconti ufficiali</button>
         </div>
       </div>
@@ -108,6 +110,89 @@
       <p class="fine" id="deal-more-note"></p>
     </div>
     <p class="empty" id="deals-empty" hidden>Nessuna offerta con questi filtri. Allarga il budget o togli la categoria.</p>
+  </section>
+
+  <!-- ===================== CARRELLO ===================== -->
+  <section class="panel" id="panel-carrello">
+    <div class="section-head">
+      <span class="eyebrow">Carrello e checkout demo</span>
+      <h2>Un acquisto finto, con tutte le attese di uno vero.</h2>
+      <p class="lead">
+        Aggiungi offerte dal catalogo, compila i dati di spedizione e paga con la carta di test: qui non viene addebitato
+        nulla, nessun pacco parte e nessun dato esce dal browser. Serve a vedere il flusso d'acquisto completo con i prezzi del radar.
+      </p>
+    </div>
+
+    <div class="notice notice-info" role="note">
+      <strong>Checkout dimostrativo.</strong>
+      Nessun pagamento reale, nessuna carta vera, nessuna spedizione. Usa solo la carta di test qui indicata:
+      i campi restano nella pagina e il numero viene salvato solo come ultime 4 cifre nell'ordine demo.
+    </div>
+
+    <div class="split split-wide">
+      <div class="cart-main">
+        <div class="card">
+          <div class="card-head">
+            <h3>Il tuo carrello</h3>
+            <span class="tag" id="cart-lines">0 articoli</span>
+          </div>
+          <div id="cart-items"></div>
+        </div>
+
+        <form class="card form" id="checkout-form" novalidate hidden>
+          <div class="card-head">
+            <h3>Spedizione e pagamento</h3>
+            <span class="demo-tag">nessun addebito</span>
+          </div>
+          <div class="form-row">
+            <div class="field">
+              <label for="buyer-name">Nome e cognome</label>
+              <input id="buyer-name" name="name" autocomplete="off" placeholder="Mario Rossi">
+            </div>
+            <div class="field">
+              <label for="buyer-email">Email</label>
+              <input id="buyer-email" name="email" type="text" autocomplete="off" spellcheck="false" placeholder="mario@example.com">
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="field">
+              <label for="buyer-address">Indirizzo di consegna</label>
+              <input id="buyer-address" name="address" autocomplete="off" placeholder="Via Roma 1, 20121 Milano">
+            </div>
+            <div class="field">
+              <label for="card-number">Numero carta</label>
+              <input id="card-number" name="card" inputmode="numeric" autocomplete="off" spellcheck="false" placeholder="4242 4242 4242 4242">
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="field">
+              <label for="card-exp">Scadenza</label>
+              <input id="card-exp" name="exp" inputmode="numeric" autocomplete="off" placeholder="12/29">
+            </div>
+            <div class="field">
+              <label for="card-cvv">CVV</label>
+              <input id="card-cvv" name="cvv" inputmode="numeric" autocomplete="off" placeholder="123">
+            </div>
+          </div>
+          <p class="fine">Carta di test: <code>4242 4242 4242 4242</code> · scadenza <code>12/29</code> · CVV <code>123</code>.
+            <button type="button" class="inline-link" data-fill-demo>Riempi i campi</button></p>
+          <p class="form-error" id="checkout-error" role="alert" hidden></p>
+          <button class="btn btn-primary" type="submit" id="pay-btn">Paga <span id="pay-total"></span> (demo)</button>
+        </form>
+
+        <div id="order-confirmation" aria-live="polite"></div>
+      </div>
+
+      <aside class="card cart-summary" id="cart-summary"></aside>
+    </div>
+
+    <div class="section-head section-head-tight">
+      <span class="eyebrow">Storico</span>
+      <h2>I tuoi ordini demo</h2>
+      <p class="lead">Restano salvati su questo dispositivo insieme al carrello: puoi chiudere la pagina e ritrovarli.</p>
+    </div>
+
+    <div id="orders-list"></div>
   </section>
 
   <!-- ===================== SCONTI ===================== -->

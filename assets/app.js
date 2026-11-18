@@ -51,6 +51,10 @@
   var requests = load("requests", []);
   var codes = load("codes", []);
   var checks = load("checks", {});
+  var cart = load("cart", []);
+  if (!Array.isArray(cart)) cart = [];
+  var orders = load("orders", []);
+  if (!Array.isArray(orders)) orders = [];
 
   function coinById(id) {
     return D.coins.filter(function (c) { return c.id === id; })[0] || D.coins[0];
@@ -147,7 +151,7 @@
 
   /* ---------------- tabs ---------------- */
   function setTab(name, scroll) {
-    var known = ["offerte", "sconti", "dropshipping", "mining", "idee"];
+    var known = ["offerte", "sconti", "carrello", "dropshipping", "mining", "idee"];
     if (known.indexOf(name) === -1) name = "offerte";
     state.tab = name;
     $$(".tab").forEach(function (btn) {
@@ -161,6 +165,7 @@
     if (history.replaceState) history.replaceState(null, "", "#" + name);
     if (scroll !== false) window.scrollTo({ top: 0, behavior: "smooth" });
     if (name === "mining") updateAccountDom();
+    if (name === "carrello") { renderCart(); renderOrders(); }
   }
 
   /* ============================================================
@@ -326,6 +331,9 @@
         '<div class="deal-foot">' +
           '<span class="rating">★ <b>' + d.rating.toFixed(1).replace(".", ",") + '</b> · ' + E.num(d.reviews, 0) + ' rec.</span>' +
           '<div class="deal-actions">' +
+            '<button class="icon-btn" data-add-cart="' + E.escapeHtml(d.id) + '" type="button" aria-label="Aggiungi al carrello (demo)" title="Aggiungi al carrello (demo)">' +
+              '<svg viewBox="0 0 24 24"><path d="M3 4h2l2.2 10.2a2 2 0 0 0 2 1.6h7.2a2 2 0 0 0 2-1.6L20 8H6"/><circle cx="10" cy="19" r="1.4"/><circle cx="17" cy="19" r="1.4"/></svg>' +
+            '</button>' +
             '<button class="icon-btn" data-why="' + E.escapeHtml(d.id) + '" aria-label="Perché questo punteggio" aria-expanded="false">' +
               '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>' +
             '</button>' +
@@ -390,11 +398,330 @@
       renderDeals();
     });
     $("#deals-grid").addEventListener("click", function (e) {
+      var addBtn = e.target.closest("[data-add-cart]");
+      if (addBtn) { addToCart(addBtn.getAttribute("data-add-cart")); return; }
       var btn = e.target.closest("[data-why]");
       if (!btn) return;
       var card = btn.closest(".deal");
       var open = card.classList.toggle("is-open");
       btn.setAttribute("aria-expanded", open ? "true" : "false");
+    });
+  }
+
+  /* ============================================================
+     CARRELLO + CHECKOUT DEMO
+     Acquisti finti: nessun addebito, nessun ordine reale.
+     ============================================================ */
+  var SHIPPING_FLAT = 4.9;
+  var FREE_SHIPPING_FROM = 49;
+
+  function dealById(id) {
+    return D.deals.filter(function (d) { return d.id === id; })[0] || null;
+  }
+
+  function cartLines() {
+    return cart.map(function (line) {
+      var deal = dealById(line.id);
+      if (!deal) return null;
+      var qty = Math.max(1, Math.min(9, Number(line.qty) || 1));
+      return { deal: deal, qty: qty, total: deal.price * qty };
+    }).filter(Boolean);
+  }
+
+  function cartTotals() {
+    var lines = cartLines();
+    var subtotal = lines.reduce(function (s, l) { return s + l.total; }, 0);
+    var count = lines.reduce(function (s, l) { return s + l.qty; }, 0);
+    var savings = lines.reduce(function (s, l) { return s + Math.max(0, l.deal.avg90 - l.deal.price) * l.qty; }, 0);
+    var shipping = subtotal === 0 || subtotal >= FREE_SHIPPING_FROM ? 0 : SHIPPING_FLAT;
+    return { lines: lines, count: count, subtotal: subtotal, shipping: shipping, total: subtotal + shipping, savings: savings };
+  }
+
+  function saveCart() {
+    save("cart", cart);
+    updateCartBadge();
+  }
+
+  function updateCartBadge() {
+    var badge = $("#cart-badge");
+    if (!badge) return;
+    var t = cartTotals();
+    badge.textContent = t.count;
+    badge.hidden = t.count === 0;
+    var tab = $('.tab[data-tab="carrello"]');
+    if (tab) tab.setAttribute("aria-label", "Carrello: " + t.count + (t.count === 1 ? " articolo" : " articoli"));
+  }
+
+  function addToCart(id) {
+    var deal = dealById(id);
+    if (!deal) return;
+    var line = cart.filter(function (l) { return l.id === id; })[0];
+    if (line) line.qty = Math.min(9, (Number(line.qty) || 1) + 1);
+    else cart.push({ id: id, qty: 1 });
+    saveCart();
+    renderCart();
+    toast(deal.name + " nel carrello (demo)");
+  }
+
+  function changeQty(id, delta) {
+    var line = cart.filter(function (l) { return l.id === id; })[0];
+    if (!line) return;
+    var qty = (Number(line.qty) || 1) + delta;
+    if (qty < 1) cart = cart.filter(function (l) { return l.id !== id; });
+    else line.qty = Math.min(9, qty);
+    saveCart();
+    renderCart();
+  }
+
+  function cartRow(line) {
+    var d = line.deal;
+    return '<div class="cart-item" data-line="' + E.escapeHtml(d.id) + '">' +
+      dealThumb(d) +
+      '<div class="cart-info">' +
+        '<b>' + E.escapeHtml(d.name) + '</b>' +
+        '<small>' + E.escapeHtml(d.merchant) + ' · ' + E.escapeHtml(d.category) + '</small>' +
+        '<span class="cart-unit">' + E.eur(d.price) + ' <em>' + E.eur(d.listPrice) + '</em></span>' +
+      '</div>' +
+      '<div class="qty">' +
+        '<button type="button" data-qty="-1" aria-label="Riduci quantità">−</button>' +
+        '<span>' + line.qty + '</span>' +
+        '<button type="button" data-qty="1" aria-label="Aumenta quantità">+</button>' +
+      '</div>' +
+      '<div class="cart-line-total">' + E.eur(line.total) + '</div>' +
+      '<button type="button" class="icon-btn" data-remove aria-label="Rimuovi ' + E.escapeHtml(d.name) + '">' +
+        '<svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg>' +
+      '</button>' +
+    '</div>';
+  }
+
+  function renderCart() {
+    var items = $("#cart-items");
+    var form = $("#checkout-form");
+    var summary = $("#cart-summary");
+    if (!items || !summary) return;
+    var t = cartTotals();
+    $("#cart-lines").textContent = t.count + (t.count === 1 ? " articolo" : " articoli");
+
+    if (!t.lines.length) {
+      items.innerHTML = '<div class="empty-state">Carrello vuoto. Apri le offerte e usa il pulsante del carrello su una card per aggiungere un prodotto.<br><button class="btn btn-ghost btn-sm" type="button" data-go-offerte style="margin-top:12px">Vai alle offerte</button></div>';
+      form.hidden = true;
+      summary.innerHTML = '<h3>Riepilogo</h3>' +
+        '<p class="muted">Nessun articolo. Spedizione simulata: gratis sopra i ' + E.eur(FREE_SHIPPING_FROM) + ', altrimenti ' + E.eur(SHIPPING_FLAT) + '.</p>' +
+        '<p class="fine">Il carrello resta salvato su questo dispositivo.</p>';
+      return;
+    }
+
+    items.innerHTML = t.lines.map(cartRow).join("");
+    form.hidden = false;
+    $("#pay-total").textContent = E.eur(t.total);
+    summary.innerHTML = '<h3>Riepilogo</h3>' +
+      '<div class="account-line"><span>Articoli (' + t.count + ')</span><b>' + E.eur(t.subtotal) + '</b></div>' +
+      '<div class="account-line"><span>Spedizione</span><b>' + (t.shipping ? E.eur(t.shipping) : "gratis") + '</b></div>' +
+      '<div class="account-line"><span>IVA</span><b>inclusa</b></div>' +
+      '<div class="cart-total"><span>Totale</span><b>' + E.eur(t.total) + '</b></div>' +
+      (t.savings > 0 ? '<p class="cart-saving">Rispetto alla media 90 giorni risparmi ' + E.eur(t.savings) + '.</p>' : '') +
+      (t.shipping > 0 ? '<p class="fine">Ti mancano ' + E.eur(Math.max(0, FREE_SHIPPING_FROM - t.subtotal)) + ' per la spedizione gratis.</p>' : '<p class="fine">Spedizione gratis sopra i ' + E.eur(FREE_SHIPPING_FROM) + '.</p>') +
+      '<div class="cart-summary-actions">' +
+        '<button class="btn btn-primary btn-sm" type="button" data-go-checkout>Vai al pagamento</button>' +
+        '<button class="btn btn-ghost btn-sm" type="button" data-clear-cart>Svuota</button>' +
+      '</div>' +
+      '<p class="fine">Checkout demo: nessun addebito, nessuna spedizione, nessuna carta reale.</p>';
+  }
+
+  function renderOrders() {
+    var wrap = $("#orders-list");
+    if (!wrap) return;
+    if (!orders.length) {
+      wrap.innerHTML = '<div class="empty-state">Nessun ordine demo. Completa un checkout per vederlo qui.</div>';
+      return;
+    }
+    wrap.innerHTML = '<div class="orders">' + orders.map(function (o) {
+      var date = new Date(o.at).toLocaleString("it-IT", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" });
+      return '<article class="order-card">' +
+        '<div class="order-top">' +
+          '<div><b>' + E.escapeHtml(o.id) + '</b><small>' + date + ' · ' + o.items.length + (o.items.length === 1 ? " articolo" : " articoli") + '</small></div>' +
+          '<span class="badge badge-good">pagato (demo)</span>' +
+        '</div>' +
+        '<div class="order-items">' + o.items.map(function (it) {
+          return '<span>' + E.escapeHtml(it.name) + ' ×' + it.qty + '</span>';
+        }).join("") + '</div>' +
+        '<div class="order-foot"><span>Totale <b>' + E.eur(o.total) + '</b></span><span>Consegna stimata <b>' + E.escapeHtml(o.eta) + '</b></span></div>' +
+        '</article>';
+    }).join("") + '</div>' +
+      '<div class="load-more"><button class="btn btn-ghost btn-sm" type="button" data-clear-orders>Svuota lo storico</button></div>';
+  }
+
+  function luhnOk(value) {
+    var digits = String(value || "").replace(/\D/g, "");
+    if (digits.length < 13 || digits.length > 19) return false;
+    var sum = 0;
+    var dbl = false;
+    for (var i = digits.length - 1; i >= 0; i--) {
+      var n = Number(digits.charAt(i));
+      if (dbl) { n *= 2; if (n > 9) n -= 9; }
+      sum += n;
+      dbl = !dbl;
+    }
+    return sum % 10 === 0;
+  }
+
+  function expiryOk(value) {
+    var m = /^(\d{2})\s*\/\s*(\d{2})$/.exec(String(value || "").trim());
+    if (!m) return false;
+    var month = Number(m[1]);
+    if (month < 1 || month > 12) return false;
+    var now = new Date();
+    return new Date(2000 + Number(m[2]), month, 1) > new Date(now.getFullYear(), now.getMonth(), 1);
+  }
+
+  function orderCode() {
+    var d = new Date();
+    var rand = Math.random().toString(36).slice(2, 5).toUpperCase();
+    return "RR-" + String(d.getFullYear()).slice(2) + ("0" + (d.getMonth() + 1)).slice(-2) + "-" + rand;
+  }
+
+  function etaDate(days) {
+    var d = new Date();
+    d.setDate(d.getDate() + days);
+    return d.toLocaleDateString("it-IT", { day: "2-digit", month: "long" });
+  }
+
+  function showConfirmation(order) {
+    var el = $("#order-confirmation");
+    if (!el) return;
+    el.innerHTML = '<div class="order-confirm">' +
+      '<div class="order-confirm-head">' +
+        '<span class="badge badge-good">ordine confermato</span>' +
+        '<span class="fine">nessun addebito</span>' +
+      '</div>' +
+      '<h3>Grazie' + (order.email ? ", " + E.escapeHtml(order.email.split("@")[0]) : "") + '.</h3>' +
+      '<p>Ordine <b>' + E.escapeHtml(order.id) + '</b> · carta •••• ' + E.escapeHtml(order.card) + ' · totale <b>' + E.eur(order.total) + '</b>.</p>' +
+      '<p class="fine">Consegna stimata <b>' + E.escapeHtml(order.eta) + '</b>. Nessun pagamento è stato eseguito e nessun pacco partirà: è un ordine fittizio salvato solo nel browser.</p>' +
+      '<div class="order-steps">' +
+        '<div class="order-step is-done"><i></i><span>Pagamento confermato</span></div>' +
+        '<div class="order-step"><i></i><span>In preparazione</span></div>' +
+        '<div class="order-step"><i></i><span>Consegna ' + E.escapeHtml(order.eta) + '</span></div>' +
+      '</div>' +
+      '<button class="btn btn-ghost btn-sm" type="button" data-go-offerte style="margin-top:14px">Torna alle offerte</button>' +
+    '</div>';
+  }
+
+  function checkout() {
+    var t = cartTotals();
+    if (!t.lines.length) return;
+    var err = $("#checkout-error");
+    var name = $("#buyer-name").value.trim();
+    var email = $("#buyer-email").value.trim();
+    var address = $("#buyer-address").value.trim();
+    var card = $("#card-number").value;
+    var exp = $("#card-exp").value;
+    var cvv = $("#card-cvv").value.replace(/\D/g, "");
+    var problems = [];
+    if (name.length < 3) problems.push("nome e cognome mancanti");
+    if (!/^[^\s@]+@[^\s@]+\.[a-zA-Z]{2,}$/.test(email)) problems.push("email non valida");
+    if (address.length < 6) problems.push("indirizzo troppo corto");
+    if (!luhnOk(card)) problems.push("numero carta non valido (usa 4242 4242 4242 4242)");
+    if (!expiryOk(exp)) problems.push("scadenza non valida (usa 12/29)");
+    if (cvv.length < 3) problems.push("CVV mancante");
+    if (problems.length) {
+      err.textContent = "Controlla: " + problems.join(", ") + ".";
+      err.hidden = false;
+      return;
+    }
+    err.hidden = true;
+    var btn = $("#pay-btn");
+    var label = btn.innerHTML;
+    btn.disabled = true;
+    btn.textContent = "Pagamento in corso…";
+    setTimeout(function () {
+      var order = {
+        id: orderCode(),
+        at: new Date().toISOString(),
+        items: t.lines.map(function (l) { return { id: l.deal.id, name: l.deal.name, merchant: l.deal.merchant, qty: l.qty, price: l.deal.price }; }),
+        subtotal: round2(t.subtotal),
+        shipping: round2(t.shipping),
+        total: round2(t.total),
+        card: String(card).replace(/\D/g, "").slice(-4),
+        email: email,
+        address: address,
+        eta: etaDate(t.total >= FREE_SHIPPING_FROM ? 3 : 4)
+      };
+      orders.unshift(order);
+      if (orders.length > 20) orders.length = 20;
+      save("orders", orders);
+      cart = [];
+      saveCart();
+      btn.disabled = false;
+      btn.innerHTML = label;
+      $("#checkout-form").reset();
+      renderCart();
+      renderOrders();
+      showConfirmation(order);
+      toast("Ordine demo " + order.id + " confermato · nessun addebito");
+    }, 1500);
+  }
+
+  function bindCart() {
+    $("#cart-items").addEventListener("click", function (e) {
+      if (e.target.closest("[data-go-offerte]")) { setTab("offerte"); return; }
+      var row = e.target.closest("[data-line]");
+      if (row) {
+        var id = row.getAttribute("data-line");
+        var qtyBtn = e.target.closest("[data-qty]");
+        if (qtyBtn) { changeQty(id, Number(qtyBtn.getAttribute("data-qty"))); return; }
+        if (e.target.closest("[data-remove]")) {
+          cart = cart.filter(function (l) { return l.id !== id; });
+          saveCart();
+          renderCart();
+          toast("Articolo rimosso dal carrello");
+          return;
+        }
+      }
+    });
+
+    $("#cart-summary").addEventListener("click", function (e) {
+      if (e.target.closest("[data-clear-cart]")) {
+        cart = [];
+        saveCart();
+        renderCart();
+        toast("Carrello svuotato");
+        return;
+      }
+      if (e.target.closest("[data-go-checkout]")) {
+        var form = $("#checkout-form");
+        if (form && !form.hidden) {
+          form.scrollIntoView({ behavior: "smooth", block: "center" });
+          $("#buyer-name").focus({ preventScroll: true });
+        }
+      }
+    });
+
+    $("#order-confirmation").addEventListener("click", function (e) {
+      if (e.target.closest("[data-go-offerte]")) setTab("offerte");
+    });
+
+    $("#orders-list").addEventListener("click", function (e) {
+      if (!e.target.closest("[data-clear-orders]")) return;
+      orders = [];
+      save("orders", orders);
+      renderOrders();
+      toast("Storico ordini demo svuotato");
+    });
+
+    $("#checkout-form").addEventListener("submit", function (e) {
+      e.preventDefault();
+      checkout();
+    });
+    $("#checkout-form").addEventListener("click", function (e) {
+      if (!e.target.closest("[data-fill-demo]")) return;
+      $("#buyer-name").value = "Mario Rossi";
+      $("#buyer-email").value = "mario.rossi@example.com";
+      $("#buyer-address").value = "Via Roma 1, 20121 Milano";
+      $("#card-number").value = "4242 4242 4242 4242";
+      $("#card-exp").value = "12/29";
+      $("#card-cvv").value = "123";
+      $("#checkout-error").hidden = true;
+      toast("Dati demo inseriti");
     });
   }
 
@@ -1434,6 +1761,10 @@
     renderDealFilters();
     bindDeals();
     renderDeals();
+    bindCart();
+    renderCart();
+    renderOrders();
+    updateCartBadge();
     renderOffers();
     bindCodes();
     renderCodes();

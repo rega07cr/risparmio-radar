@@ -9,8 +9,9 @@ Webapp statica (HTML + CSS + JavaScript, zero build, zero dipendenze) per:
 2. **Sconti verificati** — promozioni ufficiali dei negozi (link diretti, condizioni dichiarate) + archivio personale dei codici sconto testati, con voti, data dell'ultimo test e percentuale di successo. Nessun codice viene inventato.
 3. **Dropshipping lab** — prodotti ordinati per opportunità, calcolo di prezzo/margine/ROAS di pareggio, e generatore di listing differenziati (Premium, Bundle, Essenziale, Eco) con export JSON.
 4. **Mining lab** — misura dell'hashrate del browser, confronto di 10 monete (da Bitcoin a Firo), ricavo/costo elettrico/netto giornaliero, conto temporaneo demo e flusso di prelievo simulato.
-5. **MineVault** — conto bancario *simulato* in stile Revolut dentro la sezione Mining: saldo, IBAN finto, movimenti, trasferimento dal conto mining con commissioni e imposta trattenuta, prelievo demo verso il "conto reale" e simulatore di versamento. Saldo e storico stanno in `localStorage` (`rr1:vault`), quindi **sopravvivono alla chiusura della pagina**.
-6. **Idee per guadagnare** — 15 attività con capitale, tempo al primo incasso, potenziale realistico, primo passo concreto e bandiere rosse.
+5. **Carrello e checkout demo** — acquisti finti completi: aggiungi un'offerta al carrello, cambia quantità, vedi subtotale/spedizione (gratis sopra 49 €)/totale, compila i dati e paga con la carta di test `4242 4242 4242 4242` (validazione Luhn, scadenza e CVV). Il pagamento "va in elaborazione", poi arriva la conferma con numero d'ordine, ultime 4 cifre della carta e consegna stimata. Nessun addebito, nessuna spedizione: carrello e storico ordini restano in `localStorage` (`rr1:cart`, `rr1:orders`).
+6. **MineVault** — conto bancario *simulato* in stile Revolut dentro la sezione Mining: saldo, IBAN finto, movimenti, trasferimento dal conto mining con commissioni e imposta trattenuta, prelievo demo verso il "conto reale" e simulatore di versamento. Saldo e storico stanno in `localStorage` (`rr1:vault`), quindi **sopravvivono alla chiusura della pagina**.
+7. **Idee per guadagnare** — 15 attività con capitale, tempo al primo incasso, potenziale realistico, primo passo concreto e bandiere rosse.
 
 ## Avvio locale
 
@@ -42,12 +43,13 @@ Tutti i percorsi sono relativi (`assets/...`), quindi funziona anche in una sott
 | Prezzi crypto | Valori statici + pulsante "Aggiorna prezzi" su CoinGecko (API pubblica, senza chiave) | Un provider a pagamento se serve affidabilità e volumi alti |
 | Mining | Simulazione dichiarata | Pool + wallet + exchange con KYC; nessun payout può avvenire da una pagina web |
 | MineVault | Conto demo locale: IBAN finto, saldo in `localStorage`, aliquota fiscale selezionabile (0/26/33/43%) | Un conto reale richiede una banca o un EMI autorizzato: non può essere creato da una pagina statica |
+| Carrello / checkout | Ordine finto salvato in locale, con carta di test e validazioni reali | Un incasso vero richiede un processore di pagamento (Stripe) e un backend per creare la sessione e ricevere il webhook |
 
 Per aggiornare le offerte basta modificare l'array `deals` in `assets/data.js` (campi: `price`, `listPrice`, `avg90`, `min90`, `rating`, `reviews`, `shipping`). Il punteggio viene ricalcolato al volo.
 
 ## Pagamenti reali (dropshipping)
 
-Questa app **non** raccoglie dati di carta e non può farlo: un sito statico non è un processore di pagamenti. Il percorso corretto:
+Il checkout della sezione **Carrello** è finto: accetta una carta di test, non chiama nessun provider e non salva il numero di carta (solo le ultime 4 cifre nell'ordine demo). Un sito statico non è un processore di pagamenti e non può incassare. Il percorso corretto:
 
 - **Shopify** — store + checkout, prova gratuita poi ~39 €/mese.
 - **Stripe** — checkout ospitato; serve un backend (Worker/serverless) per creare la sessione di pagamento e un webhook per gli ordini.
@@ -94,7 +96,7 @@ Nessun server, nessun analytics, nessuna chiamata di rete tranne:
 - CoinGecko, solo quando premi "Aggiorna prezzi";
 - i link che apri tu.
 
-Codici sconto, checklist pagamenti, saldo demo, richieste di prelievo e conto MineVault restano in `localStorage` sul tuo dispositivo: nessuno di questi dati viene inviato da nessuna parte.
+Codici sconto, checklist pagamenti, saldo demo, richieste di prelievo, conto MineVault, carrello e ordini demo restano in `localStorage` sul tuo dispositivo: nessuno di questi dati viene inviato da nessuna parte, e i dati di pagamento non vengono mai salvati.
 
 ## Limiti dichiarati
 
